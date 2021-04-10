@@ -1,6 +1,10 @@
 import { Component } from "react";
 import Burger from "../../components/Burger/Burger";
 import BurgerControls from "../../components/Burger/BurgerControls/BurgerControls";
+import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
+import Model from "../../components/UI/Model/Model";
+import Backdrop from "../../components/UI/Backdrop/Backdrop";
+
 import Aux from "../../hoc/Aux";
 
 const INGREDIENT_PRICES = {
@@ -19,7 +23,27 @@ class BurgerBuilder extends Component {
             cheese: 0,
             meat: 0,
         },
-        totalPrice: 20
+        totalPrice: 20,
+        purchasable: false,
+        purchasing: false,
+    }
+
+    updatePurchasable = (ingredients) => {
+
+        const sum = Object.keys(ingredients).map((key) => {
+            return ingredients[key];
+        }).reduce((sum, el) => {
+            return sum + el;
+        }, 0);
+        this.setState({ purchasable: sum > 0 });
+    }
+
+    purchaseHandler = () => {
+        this.setState({ purchasing: true })
+    }
+
+    closeModel = () => {
+        this.setState({ purchasing: false })
     }
 
     addIngredientHandler = (type) => {
@@ -33,6 +57,7 @@ class BurgerBuilder extends Component {
         const oldPrice = this.state.totalPrice;
         const newPrice = oldPrice + priceAddition;
         this.setState({ totalPrice: newPrice, ingredients: updatedIngredients });
+        this.updatePurchasable(updatedIngredients);
     }
 
     removeIngredientHandler = (type) => {
@@ -49,6 +74,7 @@ class BurgerBuilder extends Component {
         const oldPrice = this.state.totalPrice;
         const newPrice = oldPrice - priceDeduction;
         this.setState({ totalPrice: newPrice, ingredients: updatedIngredients });
+        this.updatePurchasable(updatedIngredients);
     }
 
     render() {
@@ -58,14 +84,29 @@ class BurgerBuilder extends Component {
         for (let key in disabledInfo) {
             disabledInfo[key] = disabledInfo[key] <= 0
         }
+        let model = null
+        if (this.state.purchasing) {
+            model = (
+                <Aux>
+                    <Backdrop close={this.closeModel} />
+
+                    <Model>
+                        <OrderSummary ingredients={this.state.ingredients} />
+                    </Model>
+                </Aux>
+            );
+        }
         return (
             <Aux>
+                {model}
                 <Burger ingredients={this.state.ingredients} />
                 <BurgerControls
                     ingredientsAdded={this.addIngredientHandler}
                     ingredientsRemove={this.removeIngredientHandler}
                     disabled={disabledInfo}
                     price={this.state.totalPrice}
+                    purchasable={this.state.purchasable}
+                    purchasing={this.purchaseHandler}
                 />
             </Aux>
         );
